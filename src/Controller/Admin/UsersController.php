@@ -3,8 +3,8 @@ namespace App\Controller\Admin;
 
 use App\Controller\AppController;
 use Cake\Network\Exception\NotFoundException;
-use Cake\Mailer\Email;
 use Cake\Event\Event;
+use Cake\Mailer\MailerAwareTrait;
 
 /**
  * Users Controller
@@ -13,6 +13,8 @@ use Cake\Event\Event;
  */
 class UsersController extends AppController
 {
+    use MailerAwareTrait;
+
     public function beforeFilter(Event $event)
     {
         parent::beforeFilter($event);
@@ -130,6 +132,24 @@ class UsersController extends AppController
         return $this->render('form');
     }
 
+    public function password() {
+        $user = $this->Users->get($this->Auth->user('id'));
+
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $user = $this->Users->patchEntity($user, $this->request->data);
+
+            if ($this->Users->save($user)) {
+                $this->Flash->success(__('Your password has been successfully updated.'));
+
+                return $this->redirect(['action' => 'password']);
+            } else {
+                $this->Flash->error(__('There was a problem, please review the errors and try again.'));
+            }
+        }
+
+        $this->set(compact('user'));
+    }
+
     /**
      * Delete method
      *
@@ -159,15 +179,14 @@ class UsersController extends AppController
     public function reset()
     {
         if ($this->request->is('post')) {
-            $admin = $this->Admins->findByEmail($this->request->data['email'])->first();
-            if (!$admin) {
-                $this->Flash->error(__('That email is not valid.'));
+            $user = $this->Users->findByEmail($this->request->data['email'])->first();
+            if (!$user) {
+                $this->Flash->error(__('The email address you entered, is no valid.'));
             } else {
-                $token = $this->Admins->generateToken($admin->username . $admin->first_name . $admin->last_name);
-                $admin->token = $token;
-                if ($this->Admins->save($admin)) {
+                $user->token = $this->Users->generateToken();
+                if ($this->Users->save($user)) {
                     $this->Flash->success(__('An email containing the reset link has been sent.'));
-                    $this->Email->sendResetEmail($this->request->data['email'], $token);
+                    $this->getMailer('User')->send('resetPassword', [$user]);
 
                     return $this->redirect(['action' => 'login']);
                 } else {
@@ -187,30 +206,29 @@ class UsersController extends AppController
     public function resetPassword($token = null)
     {
         if (!$token) {
-            throw new NotFoundException("Error Processing Request");
+            throw new NotFoundException('Invalid Token');
         }
-        $admin = $this->Admins->find('all')->where(['Admins.token' => $token])->first();
-        if (!$admin) {
-            throw new NotFoundException('Error Processing Request');
+
+        $user = $this->Users->find('all')->where(['Users.token' => $token])->first();
+
+        if (!$user) {
+            throw new NotFoundException('Invalid Token');
         }
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $admin->token = null;
-            $admin = $this->Admins->patchEntity($admin, $this->request->data);
+            $user->token    = null;
+            $user = $this->Users->patchEntity($user, $this->request->data);
 
-            // not sure why _setPassword isn't called before save
-            $admin->password = $this->Admins->setPassword($admin->password);
-
-            if ($this->Admins->save($admin)) {
-                $this->Flash->success(__('Password updated'));
-                $this->Auth->setUser($admin);
+            if ($this->Users->save($user)) {
+                $this->Flash->success(__('Your password has been successfully updated and you have been automatically logged in.'));
+                $this->Auth->setUser($user);
                 return $this->redirect($this->Auth->redirectUrl());
             } else {
                 $this->Flash->error('There was a problem, please review the errors and try again.');
             }
         }
 
-        $this->set(compact('admin'));
+        $this->set(compact('user'));
     }
 
     /**
