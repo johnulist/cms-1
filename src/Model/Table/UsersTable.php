@@ -6,6 +6,7 @@ use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 use Cake\Network\Exception\NotFoundException;
+use Cake\Auth\DefaultPasswordHasher;
 
 /**
  * Users Model
@@ -69,7 +70,61 @@ class UsersTable extends Table
      */
     public function validationDefault(Validator $validator)
     {
+        $validator
+            ->integer('id')
+            ->allowEmpty('id', 'create');
 
+        $validator->notEmpty('username', 'A username is required.');
+        $validator->notEmpty('first_name', 'First name is required.');
+        $validator->notEmpty('last_name', 'Last name is required.');
+
+        $validator->add(
+            'username',
+            ['unique' => [
+                'rule' => 'validateUnique',
+                'provider' => 'table',
+                'message' => 'That username is already taken.']
+            ]
+        );
+
+        $validator
+            ->notEmpty('email', 'Email Address is required')
+            ->email('email', 'The email address you entered is invalid');
+
+        $validator->add(
+            'email',
+            ['unique' => [
+                'rule' => 'validateUnique',
+                'provider' => 'table',
+                'message' => 'Someone else has already registered with that email address.']
+            ]
+        );
+
+        $validator->notEmpty('password', 'Please enter in your new password.');
+
+        $validator->add('password', [
+            'minLength' => [
+                'rule' => ['minLength', 6],
+                'message' => 'Please ensure the password is at least 6 characters long.'
+            ]
+        ]);
+
+        $validator->add('password', [
+            'compare' => [
+                'rule' => ['compareWith', 'confirm_password'],
+                'message' => 'Please ensure the passwords match.'
+            ]
+        ]);
+
+        $validator->notEmpty('confirm_password', 'Please confirm your new password.');
+
+        $validator->notEmpty('current_password', 'Please confirm your current password.');
+
+        $validator->add('current_password', 'custom', [
+            'rule' => 'checkPassword',
+            'provider' => 'table',
+            'message' => 'The password you entered is incorrect.'
+        ]);
 
         return $validator;
     }
@@ -100,5 +155,40 @@ class UsersTable extends Table
         }
 
         return true;
+    }
+
+    /**
+     * Generates a random token
+     *
+     * @param int $length How long the new token will be
+     * @return string
+     */
+    public function generateToken($length = 8) {
+        $randomString = 'abcdefghjkmnpqrstuvwqyz23456789';
+
+        $token = null;
+
+        for ($i = 0; $i < $length; $i++) {
+            $token .= substr($randomString, mt_rand(0, strlen($randomString) - 1), 1);
+        }
+
+        return $token;
+    }
+
+    /**
+     * Checks a password matches
+     * @param  string $value
+     * @param  array  $data
+     * @return boolean
+     */
+    public function checkPassword($value, $data = [])
+    {
+        if (empty($data['data']['id']) || empty($value)) {
+            return true;
+        }
+
+        $user = $this->get($data['data']['id'], ['fields' => 'password']);
+
+        return (new DefaultPasswordHasher)->check($value, $user->password);
     }
 }

@@ -21,11 +21,11 @@
             </a>
             <ul class="dropdown-menu dropdown-user">
                 <li>
-                    <?= $this->Html->link('<i class="fa fa-user fa-fw"></i> ' . __('Change Password'), array('plugin' => false, 'controller' => 'Admins', 'action' => 'password'), array('escape' => false)); ?>
+                    <?= $this->Html->link('<i class="fa fa-user fa-fw"></i> ' . __('Change Password'), array('plugin' => false, 'controller' => 'Users', 'action' => 'password'), array('escape' => false)); ?>
                 </li>
                 <li class="divider"></li>
                 <li>
-                    <?= $this->Html->link('<i class="fa fa-sign-out fa-fw"></i> ' . __('Logout'), array('plugin' => false, 'controller' => 'Admins', 'action' => 'logout'), array('escape' => false)); ?>
+                    <?= $this->Html->link('<i class="fa fa-sign-out fa-fw"></i> ' . __('Logout'), array('plugin' => false, 'controller' => 'Users', 'action' => 'logout'), array('escape' => false)); ?>
                 </li>
             </ul>
             <!-- /.dropdown-user -->

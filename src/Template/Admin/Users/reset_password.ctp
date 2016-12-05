@@ -16,7 +16,7 @@
                 <div class="panel-body">
                     <?= $this->Form->create() ?>
                         <fieldset>
-                            <h4>Please enter your new password</h4>
+                            <p>Please enter your new password</p>
 
                             <?php
                                 echo $this->Form->input('password', array('div' => 'form-group', 'class' => 'form-control', 'placeholder' => __('New Password'), 'label' => false));

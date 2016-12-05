@@ -16,7 +16,7 @@
 			echo ucwords(str_replace('_', ' ', Inflector::underscore($title)));
 		?>
 
-		:: BTSL Admin
+		:: Coderity CMS
 
 	</title>
 
